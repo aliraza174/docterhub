@@ -1,8 +1,8 @@
-import { connectToDatabase } from './utils/db';
-import { Appointment } from './models/Appointment';
-import { Prescription } from './models/Prescription';
-import { MedicalHistory } from './models/MedicalHistory';
-import { verifyAuth, setCorsHeaders } from './utils/auth';
+import { connectToDatabase } from '../utils/db';
+import { Appointment } from '../models/Appointment';
+import { Prescription } from '../models/Prescription';
+import { MedicalHistory } from '../models/MedicalHistory';
+import { verifyAuth, setCorsHeaders } from '../utils/auth';
 
 export default async function handler(req, res) {
   setCorsHeaders(req, res);

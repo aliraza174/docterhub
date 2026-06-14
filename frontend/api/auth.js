@@ -1,10 +1,10 @@
-import { connectToDatabase } from './utils/db';
-import { User } from './models/User';
-import { Patient } from './models/Patient';
-import { Doctor } from './models/Doctor';
-import { Assistant } from './models/Assistant';
-import { Clinic } from './models/Clinic';
-import { setCorsHeaders, JWT_SECRET } from './utils/auth';
+import { connectToDatabase } from '../utils/db';
+import { User } from '../models/User';
+import { Patient } from '../models/Patient';
+import { Doctor } from '../models/Doctor';
+import { Assistant } from '../models/Assistant';
+import { Clinic } from '../models/Clinic';
+import { setCorsHeaders, JWT_SECRET } from '../utils/auth';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
