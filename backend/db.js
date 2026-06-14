@@ -3,15 +3,22 @@ import { open } from 'sqlite';
 import path from 'path';
 import bcrypt from 'bcryptjs';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = path.join(__dirname, 'database.sqlite');
+const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'database.sqlite');
 let dbInstance = null;
 
 export async function getDb() {
   if (dbInstance) return dbInstance;
+
+  // Ensure parent directory of database exists
+  const dbDir = path.dirname(dbPath);
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
 
   dbInstance = await open({
     filename: dbPath,
