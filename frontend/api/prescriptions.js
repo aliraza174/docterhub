@@ -1,8 +1,8 @@
-import { connectToDatabase } from '../utils/db';
-import { Appointment } from '../models/Appointment';
-import { Prescription } from '../models/Prescription';
-import { MedicalHistory } from '../models/MedicalHistory';
-import { verifyAuth, setCorsHeaders } from '../utils/auth';
+import { connectToDatabase } from './utils/db';
+import { Appointment } from './models/Appointment';
+import { Prescription } from './models/Prescription';
+import { MedicalHistory } from './models/MedicalHistory';
+import { verifyAuth, setCorsHeaders } from './utils/auth';
 
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
@@ -38,23 +38,20 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Appointment not found or not assigned to you' });
     }
 
-    // Create prescription
     const newPrescription = new Prescription({
       appointment_id,
       doctor_id,
       patient_id,
       diagnosis,
-      medicines, // Stored as array/object directly in MongoDB
+      medicines,
       instructions: instructions || ''
     });
     const savedPres = await newPrescription.save();
     const prescriptionId = savedPres._id.toString();
 
-    // Mark appointment as completed
     appointment.status = 'completed';
     await appointment.save();
 
-    // Add immutable record to patient's medical history
     const historyEntry = new MedicalHistory({
       patient_id,
       doctor_id,
