@@ -1,6 +1,34 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Dynamically load .env file if it exists
+try {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const envPath = path.join(__dirname, '.env');
+  if (fs.existsSync(envPath)) {
+    const envLines = fs.readFileSync(envPath, 'utf8').split('\n');
+    for (const line of envLines) {
+      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      if (match) {
+        const key = match[1];
+        let value = match[2] || '';
+        if (value.startsWith('"') && value.endsWith('"')) {
+          value = value.substring(1, value.length - 1);
+        } else if (value.startsWith("'") && value.endsWith("'")) {
+          value = value.substring(1, value.length - 1);
+        }
+        process.env[key] = value.trim();
+      }
+    }
+  }
+} catch (e) {
+  console.warn('Could not load .env file:', e.message);
+}
+
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
@@ -55,7 +83,17 @@ const Clinic = mongoose.models.Clinic || mongoose.model('Clinic', ClinicSchema);
 
 async function seed() {
   console.log('Connecting to MongoDB Atlas...');
-  await mongoose.connect(MONGODB_URI, { dbName: 'doctorhub' });
+  try {
+    await mongoose.connect(MONGODB_URI, { dbName: 'doctorhub' });
+  } catch (err) {
+    if (MONGODB_URI && MONGODB_URI.includes('addflow-cluster.h9klu1k.mongodb.net')) {
+      console.warn('SRV connection failed (possibly DNS TXT timeout). Trying fallback replica set connection string...');
+      const fallbackURI = "mongodb://doctorhub:disconect11@ac-cvj8nqf-shard-00-00.h9klu1k.mongodb.net:27017,ac-cvj8nqf-shard-00-01.h9klu1k.mongodb.net:27017,ac-cvj8nqf-shard-00-02.h9klu1k.mongodb.net:27017/doctorhub?ssl=true&replicaSet=atlas-zyuk7x-shard-0&authSource=admin&retryWrites=true&w=majority";
+      await mongoose.connect(fallbackURI, { dbName: 'doctorhub' });
+    } else {
+      throw err;
+    }
+  }
   console.log('Connected! Cleaning existing collections...');
 
   await User.deleteMany({});

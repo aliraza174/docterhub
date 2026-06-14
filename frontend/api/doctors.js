@@ -1,11 +1,11 @@
-import { connectToDatabase } from '../utils/db';
-import { User } from '../models/User';
-import { Doctor } from '../models/Doctor';
-import { Clinic } from '../models/Clinic';
-import { Appointment } from '../models/Appointment';
-import { Assistant } from '../models/Assistant';
-import { Patient } from '../models/Patient';
-import { verifyAuth, setCorsHeaders } from '../utils/auth';
+import { connectToDatabase } from '../utils/db.js';
+import { User } from '../models/User.js';
+import { Doctor } from '../models/Doctor.js';
+import { Clinic } from '../models/Clinic.js';
+import { Appointment } from '../models/Appointment.js';
+import { Assistant } from '../models/Assistant.js';
+import { Patient } from '../models/Patient.js';
+import { verifyAuth, setCorsHeaders } from '../utils/auth.js';
 
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
