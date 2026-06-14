@@ -12,19 +12,34 @@ function getHeaders() {
   return headers;
 }
 
-// Helper to handle responses
+// Helper to handle responses and parse errors gracefully
 async function handleResponse(response) {
-  const data = await response.json();
+  const text = await response.text();
   if (!response.ok) {
-    throw new Error(data.error || 'Request failed');
+    try {
+      const data = JSON.parse(text);
+      throw new Error(data.error || text);
+    } catch (e) {
+      throw new Error(text || 'Request failed');
+    }
   }
-  return data;
+
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      throw new Error(`Invalid JSON response: ${text.substring(0, 100)}...`);
+    }
+  }
+
+  throw new Error(`Expected JSON response, but got HTML/text: ${text.substring(0, 100)}...`);
 }
 
 export const api = {
   // Authentication
   login: async (email, password) => {
-    const res = await fetch(`${API_URL}/auth/login`, {
+    const res = await fetch(`${API_URL}/auth?action=login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -36,7 +51,7 @@ export const api = {
   },
 
   register: async (userData) => {
-    const res = await fetch(`${API_URL}/auth/register`, {
+    const res = await fetch(`${API_URL}/auth?action=register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
@@ -45,7 +60,7 @@ export const api = {
   },
 
   forgotPassword: async (email, newPassword) => {
-    const res = await fetch(`${API_URL}/auth/forgot-password`, {
+    const res = await fetch(`${API_URL}/auth?action=forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, newPassword }),
@@ -73,14 +88,14 @@ export const api = {
   },
 
   getDoctorDetails: async (id) => {
-    const res = await fetch(`${API_URL}/doctors/${id}`, {
+    const res = await fetch(`${API_URL}/doctors?action=details&id=${id}`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
 
   updateClinicSchedule: async (clinicId, clinicData) => {
-    const res = await fetch(`${API_URL}/doctor/clinics/${clinicId}`, {
+    const res = await fetch(`${API_URL}/doctors?action=update-clinic&clinicId=${clinicId}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(clinicData),
@@ -110,28 +125,28 @@ export const api = {
 
   // Dashboards
   getPatientDashboard: async () => {
-    const res = await fetch(`${API_URL}/patient/dashboard`, {
+    const res = await fetch(`${API_URL}/appointments?action=patient-dashboard`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
 
   getDoctorDashboard: async () => {
-    const res = await fetch(`${API_URL}/doctor/dashboard`, {
+    const res = await fetch(`${API_URL}/doctors?action=doctor-dashboard`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
 
   getAssistantPayments: async () => {
-    const res = await fetch(`${API_URL}/assistant/payments`, {
+    const res = await fetch(`${API_URL}/payments?action=assistant-payments`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
 
   verifyPayment: async (paymentId, status) => {
-    const res = await fetch(`${API_URL}/assistant/verify-payment`, {
+    const res = await fetch(`${API_URL}/payments?action=verify-payment`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ payment_id: paymentId, status }),
@@ -151,14 +166,14 @@ export const api = {
 
   // History Timeline
   getPatientHistory: async (patientId) => {
-    const res = await fetch(`${API_URL}/patients/${patientId}/history`, {
+    const res = await fetch(`${API_URL}/appointments?action=patient-history&patientId=${patientId}`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
 
   uploadPatientReport: async (patientId, reportData) => {
-    const res = await fetch(`${API_URL}/patients/${patientId}/history/upload`, {
+    const res = await fetch(`${API_URL}/appointments?action=upload-report&patientId=${patientId}`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(reportData),
@@ -168,21 +183,21 @@ export const api = {
 
   // Administrative Control
   getAdminStats: async () => {
-    const res = await fetch(`${API_URL}/admin/stats`, {
+    const res = await fetch(`${API_URL}/admin?action=stats`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
 
   getAdminUsers: async () => {
-    const res = await fetch(`${API_URL}/admin/users`, {
+    const res = await fetch(`${API_URL}/admin?action=users`, {
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
 
   updateUserRole: async (userId, role) => {
-    const res = await fetch(`${API_URL}/admin/users/${userId}/role`, {
+    const res = await fetch(`${API_URL}/admin?action=update-role&userId=${userId}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify({ role }),
@@ -191,7 +206,7 @@ export const api = {
   },
 
   assignAssistant: async (assistantId, doctorId) => {
-    const res = await fetch(`${API_URL}/admin/assistants/assign`, {
+    const res = await fetch(`${API_URL}/admin?action=assign-assistant`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ assistant_id: assistantId, doctor_id: doctorId }),
